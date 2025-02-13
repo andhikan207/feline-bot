@@ -1,4 +1,7 @@
+import discord
+from discord import app_commands
 from discord.ext import commands, tasks
+import asyncio
 from datetime import datetime, timedelta
 
 class Reminder(commands.Cog):
@@ -7,18 +10,21 @@ class Reminder(commands.Cog):
         self.reminders = []  # Stores all active reminders
         self.check_reminders.start()  # Starts the loop when the bot is online
 
-    @commands.command()
-    async def remind(self, ctx, task: str, frequency: str, time: str):
+    @app_commands.command(name="remind", description="Set a reminder")
+    async def remind(self, interaction: discord.Interaction, task: str, frequency: str, time: str):
+        """Slash Command: /remind <task> <everyday or once> <HH:MM>
+        Example: /remind "Check in to my shift" everyday 09:00
+        """
         try:
             # Convert time input to a datetime object
             reminder_time = datetime.strptime(time, "%H:%M").time()
             
             # Store the reminder
-            self.reminders.append({"task": task, "frequency": frequency, "time": reminder_time, "channel": ctx.channel})
+            self.reminders.append({"task": task, "frequency": frequency, "time": reminder_time, "channel": interaction.channel})
             
-            await ctx.send(f"✅ Reminder set: **{task}** at **{time}** ({frequency}).")
+            await interaction.response.send_message(f"✅ Reminder set: **{task}** at **{time}** ({frequency}).")
         except ValueError:
-            await ctx.send("❌ Invalid time format. Please use HH:MM (24-hour format).")
+            await interaction.response.send_message("❌ Invalid time format. Please use HH:MM (24-hour format).", ephemeral=True)
 
     @tasks.loop(seconds=60)  # Runs every minute
     async def check_reminders(self):
