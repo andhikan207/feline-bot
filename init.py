@@ -31,16 +31,31 @@ intents.message_content = True
 # Initialize the bot
 bot = commands.Bot(command_prefix="/", intents=intents)
 
-# Load cogs (commands from other files)
+# Event when bot is ready
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
+# Get absolute path to cogs directory
+COGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cogs")
+
+# Debugging print statements
+print(f"Checking if cogs folder exists at: {COGS_DIR}")
+
 # Dynamically load all cogs from 'cogs' folder
 async def load_cogs():
-    for filename in os.listdir("./bot_files/cogs"):
+    if not os.path.exists(COGS_DIR):
+        print(f"❌ Cogs directory not found: {COGS_DIR}")
+        return
+
+    for filename in os.listdir(COGS_DIR):
         if filename.endswith(".py") and filename != "__init__.py":
-            await bot.load_extension(f"cogs.{filename[:-3]}")
+            cog_name = f"cogs.{filename[:-3]}"
+            try:
+                await bot.load_extension(cog_name)
+                print(f"✅ Loaded cog: {cog_name}")
+            except Exception as e:
+                print(f"❌ Failed to load {cog_name}: {e}")
 
 # Run bot
 async def main():

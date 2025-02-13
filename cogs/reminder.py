@@ -1,6 +1,4 @@
-import discord
 from discord.ext import commands, tasks
-import asyncio
 from datetime import datetime, timedelta
 
 class Reminder(commands.Cog):
