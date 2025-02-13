@@ -92,21 +92,19 @@ class Reminder(commands.Cog):
             self.reminders.append(reminder_data)
             print(f"✅ [DEBUG] Reminder scheduled: {reminder_data}")
 
-            # 🌟 First, send a mention so Discord will actually notify the user
-            await interaction.response.send_message(f"{interaction.user.mention}")
-
-            # 🌟 Then, send an embed with the structured reminder details
+            # 🌟 Combine Mention and Embed into One Message
             embed = discord.Embed(
-                title="😺 Reminder Set!",
+                title="🐱 Reminder Set!",
                 description=f"I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!",
-                color=discord.Color.dark_red()
+                color=discord.Color.orange()
             )
             embed.add_field(name="⏰ Time", value=f"**{reminder_datetime.strftime('%H:%M %Z')}**", inline=True)
             embed.add_field(name="🔁 Frequency", value=f"**{frequency.capitalize()}**", inline=True)
-            embed.add_field(name="🌍 Timezone", value=f"`{user_tz_name}`", inline=False)
+            embed.add_field(name="🌍 Timezone", value=f"```{user_tz_name}```", inline=False)
             embed.set_footer(text="I'll notify you when it's time! ✨")
 
-            await interaction.followup.send(embed=embed)
+            # 🌟 Send as a SINGLE message to avoid "double chatting"
+            await interaction.response.send_message(f"{interaction.user.mention}", embed=embed)
 
         except ValueError:
             await interaction.response.send_message("❌ That time format is incorrect. Use `HH:MM` (24-hour format)!", ephemeral=True)
@@ -128,15 +126,15 @@ class Reminder(commands.Cog):
                         user = await self.bot.fetch_user(reminder["user_id"])
 
                         # 🌟 First, send a mention so Discord will actually notify the user
-                        await channel.send(f"{user.mention}")
+                        mention_msg = await channel.send(f"{user.mention}")
 
                         # 🌟 Then, send an embed with the structured reminder details
                         embed = discord.Embed(
-                            title="🐱 Reminder!",
-                            description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**!",
-                            color=discord.Color.dark_red()
+                            title="🐱 Reminder Time!",
+                            description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**! ⏰",
+                            color=discord.Color.red()
                         )
-                        embed.add_field(name="⏰ Time", value=f"**{reminder['time'].capitalize()}**", inline=True)
+                        embed.add_field(name="⏰ Time", value=f"**{reminder['time'].strftime('%H:%M %Z')}**", inline=True)
                         embed.add_field(name="🔁 Frequency", value=f"`{reminder['frequency']}`", inline=True)
                         embed.set_footer(text="Please do it now! ✨")
 
