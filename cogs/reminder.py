@@ -2,10 +2,10 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 
-# Set your desired reminder channel ID (Replace this with the actual channel ID)
-REMINDER_CHANNEL_ID = 1339710713148604506  # Replace with your channel's ID
+# Set your desired reminder channel ID (Update this to match your server)
+REMINDER_CHANNEL_ID = 1339710713148604506  # Update with your actual channel ID
 
 class Reminder(commands.Cog):
     def __init__(self, bot):
@@ -41,13 +41,13 @@ class Reminder(commands.Cog):
                 "task": task,
                 "frequency": frequency.lower(),
                 "time": reminder_time,
-                "user": interaction.user.mention,  # Tag the user
+                "user_id": interaction.user.id,  # Store user ID to mention later
             }
 
             self.reminders.append(reminder_data)
             await interaction.response.send_message(
-                f"✅ Reminder set: **{task}** at **{time}** ({frequency}).\n"
-                f"⏰ **Reminders will always be sent in <#{REMINDER_CHANNEL_ID}>.**"
+                f"✅ **Reminder set:** **{task}** at **{time}** ({frequency}).\n"
+                f"⏰ **Reminders will always be sent in** <#{REMINDER_CHANNEL_ID}>."
             )
         except ValueError:
             await interaction.response.send_message(
@@ -62,8 +62,9 @@ class Reminder(commands.Cog):
                 channel = self.bot.get_channel(REMINDER_CHANNEL_ID)
 
                 if channel:
+                    user = await self.bot.fetch_user(reminder["user_id"])  # Fetch user by ID
                     await channel.send(
-                        f"⏰ **Hello, {reminder['user']}**! Have you {reminder['task']} yet?"
+                        f"⏰ **Reminder for {user.mention}**: {reminder['task']}"
                     )
                 else:
                     print(f"❌ ERROR: Could not find channel ID {REMINDER_CHANNEL_ID}")
