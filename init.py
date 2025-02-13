@@ -1,9 +1,11 @@
 import discord
 from discord.ext import commands
-from google.cloud import secretmanager
 import asyncio
+import os
 
-# Function to get the secret from Secret Manager with retry logic
+# Function to retrieve bot token from Google Secret Manager
+from google.cloud import secretmanager
+
 def get_secret(secret_id, retries=3, delay=5):
     client = secretmanager.SecretManagerServiceClient()
     secret_name = f"projects/feline-bot-discord/secrets/{secret_id}/versions/latest"
@@ -15,41 +17,35 @@ def get_secret(secret_id, retries=3, delay=5):
         except Exception as e:
             print(f"Error retrieving secret (attempt {attempt+1}): {e}")
             if attempt < retries - 1:
-                asyncio.sleep(delay)  # Wait before retrying
+                asyncio.sleep(delay)
             else:
                 raise RuntimeError("Failed to retrieve secret after multiple attempts.")
 
-# Retrieve bot token securely from Secret Manager
+# Retrieve bot token securely
 TOKEN = get_secret("bot-token")
 
-# Enable intents for message content
+# Enable intents
 intents = discord.Intents.default()
-intents.message_content = True  # Enable message content intent
+intents.message_content = True
 
-# Create the bot instance and pass the intents
+# Initialize the bot
 bot = commands.Bot(command_prefix="/", intents=intents)
 
-# Event for when the bot is ready
+# Load cogs (commands from other files)
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
-# Event for handling disconnections
-@bot.event
-async def on_disconnect():
-    print("⚠️ Disconnected from Discord. Attempting to reconnect...")
+# Dynamically load all cogs from 'cogs' folder
+async def load_cogs():
+    for filename in os.listdir("./bot_files/cogs"):
+        if filename.endswith(".py") and filename != "__init__.py":
+            await bot.load_extension(f"cogs.{filename[:-3]}")
 
-# Event for handling errors and automatic reconnections
-@bot.event
-async def on_error(event, *args, **kwargs):
-    print(f"❌ An error occurred: {event}. Reconnecting in 5 seconds...")
-    await asyncio.sleep(5)  # Wait before reconnecting
-    await bot.connect(reconnect=True)
+# Run bot
+async def main():
+    async with bot:
+        await load_cogs()  # Load all cogs (commands)
+        await bot.start(TOKEN, reconnect=True)
 
-# Simple hello command
-@bot.command()
-async def hello(ctx):
-    await ctx.send(f"Hello {ctx.author.mention}!")
-
-# Run the bot with automatic reconnection enabled
-bot.run(TOKEN, reconnect=True)
+asyncio.run(main())
