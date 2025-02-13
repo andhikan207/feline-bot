@@ -93,12 +93,12 @@ class Reminder(commands.Cog):
             print(f"✅ [DEBUG] Reminder scheduled: {reminder_data}")
 
             # 🌟 First, send a mention so Discord will actually notify the user
-            await interaction.response.send_message(f"🔔 {interaction.user.mention}, I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!")
+            await interaction.response.send_message(f"{interaction.user.mention}")
 
             # 🌟 Then, send an embed with the structured reminder details
             embed = discord.Embed(
-                title="Reminder Set!",
-                description=f"😺 I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!",
+                title="😺 Reminder Set!",
+                description=f"I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!",
                 color=discord.Color.dark_red()
             )
             embed.add_field(name="⏰ Time", value=f"**{reminder_datetime.strftime('%H:%M %Z')}**", inline=True)
@@ -132,13 +132,13 @@ class Reminder(commands.Cog):
 
                         # 🌟 Then, send an embed with the structured reminder details
                         embed = discord.Embed(
-                            title="⏰ It's Time!",
-                            description=f"🐱 Hey {user.mention}! It's time to do **{reminder['task']}**!",
+                            title="🐱 Reminder!",
+                            description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**!",
                             color=discord.Color.dark_red()
                         )
-                        embed.add_field(name="🔁 Frequency", value=f"**{reminder['frequency'].capitalize()}**", inline=True)
-                        embed.add_field(name="🌍 Timezone", value=f"`{reminder['timezone']}`", inline=True)
-                        embed.set_footer(text="Don't forget! ✨")
+                        embed.add_field(name="⏰ Time", value=f"**{reminder['time'].capitalize()}**", inline=True)
+                        embed.add_field(name="🔁 Frequency", value=f"`{reminder['frequency']}`", inline=True)
+                        embed.set_footer(text="Please do it now! ✨")
 
                         await channel.send(embed=embed)
                         print(f"📢 [DEBUG] Reminder sent to {channel.name}")
