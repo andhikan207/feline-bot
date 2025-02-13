@@ -51,7 +51,7 @@ class Reminder(commands.Cog):
         """Manually sets a user's timezone."""
         if timezone not in pytz.all_timezones:
             await interaction.response.send_message(
-                "😥 Oopsie! That timezone doesn't seem right! Try something like `Asia/Jakarta` or `America/New_York`! 🌏\n"
+                "🙀 That timezone doesn't seem right! Try something like `Asia/Jakarta` or `America/New_York`! 🌏\n"
                 "🔗 [Click here for a timezone list!](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)",
                 ephemeral=True
             )
@@ -59,7 +59,7 @@ class Reminder(commands.Cog):
 
         user_timezones[interaction.user.id] = timezone
         await interaction.response.send_message(
-            f"Your timezone is now set to `{timezone}`! I'll remind you in your local time! ⏰"
+            f"😸 Your timezone is now set to `{timezone}`! I'll remind you in your local time! ⏰"
         )
 
     @app_commands.command(name="remind", description="Set a super cute reminder! ✨")
@@ -92,10 +92,21 @@ class Reminder(commands.Cog):
             self.reminders.append(reminder_data)
             print(f"✅ [DEBUG] Reminder scheduled: {reminder_data}")
 
-            await interaction.response.send_message(
-                f"Okay! I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}** ({frequency})!\n"
-                f"🌍 I detected your timezone as `{user_tz_name}`."
+            # 🌟 First, send a mention so Discord will actually notify the user
+            await interaction.response.send_message(f"🔔 {interaction.user.mention}, I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!")
+
+            # 🌟 Then, send an embed with the structured reminder details
+            embed = discord.Embed(
+                title="Reminder Set!",
+                description=f"😺 I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!",
+                color=discord.Color.dark_red()
             )
+            embed.add_field(name="⏰ Time", value=f"**{reminder_datetime.strftime('%H:%M %Z')}**", inline=True)
+            embed.add_field(name="🔁 Frequency", value=f"**{frequency.capitalize()}**", inline=True)
+            embed.add_field(name="🌍 Timezone", value=f"`{user_tz_name}`", inline=False)
+            embed.set_footer(text="I'll notify you when it's time! ✨")
+
+            await interaction.followup.send(embed=embed)
 
         except ValueError:
             await interaction.response.send_message("❌ That time format is incorrect. Use `HH:MM` (24-hour format)!", ephemeral=True)
@@ -115,10 +126,21 @@ class Reminder(commands.Cog):
                 if channel:
                     try:
                         user = await self.bot.fetch_user(reminder["user_id"])
-                        await channel.send(
-                            f"**Hey, {user.mention}!**! It's time for: **{reminder['task']}**! ⏰\n"
-                            f"Please do it now! 😺"
+
+                        # 🌟 First, send a mention so Discord will actually notify the user
+                        await channel.send(f"{user.mention}")
+
+                        # 🌟 Then, send an embed with the structured reminder details
+                        embed = discord.Embed(
+                            title="⏰ It's Time!",
+                            description=f"🐱 Hey {user.mention}! It's time to do **{reminder['task']}**!",
+                            color=discord.Color.dark_red()
                         )
+                        embed.add_field(name="🔁 Frequency", value=f"**{reminder['frequency'].capitalize()}**", inline=True)
+                        embed.add_field(name="🌍 Timezone", value=f"`{reminder['timezone']}`", inline=True)
+                        embed.set_footer(text="Don't forget! ✨")
+
+                        await channel.send(embed=embed)
                         print(f"📢 [DEBUG] Reminder sent to {channel.name}")
 
                     except Exception as e:
