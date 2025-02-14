@@ -65,8 +65,7 @@ class Reminder(commands.Cog):
             user_tz_name = user_data.get("timezone", "UTC")
             user_tz = pytz.timezone(user_tz_name)
 
-            reminder_datetime = datetime(year, month, day, hour, minute, 0)
-            reminder_datetime = user_tz.localize(reminder_datetime)  # Convert to timezone-aware datetime
+            reminder_datetime = user_tz.localize(datetime(year, month, day, hour, minute, 0))  # Convert to timezone-aware datetime
 
             if frequency.lower() not in ["once", "daily"]:
                 await interaction.response.send_message("❌ Use `once` or `daily` for the reminder frequency!", ephemeral=True)
@@ -86,9 +85,12 @@ class Reminder(commands.Cog):
             # Embed message
             embed = discord.Embed(
                 title="🐱 Reminder Set!",
-                description=f"I'll remind you about **{task}** on **{reminder_datetime.strftime('%Y-%m-%d %H:%M %Z')}**!",
+                description=f"I'll remind you about **{task}**!",
                 color=discord.Color.orange()
             )
+            embed.add_field(name="📅 Date", value=f"**{reminder_datetime.strftime('%Y-%m-%d')}**", inline=True)
+            embed.add_field(name="⏰ Time", value=f"**{reminder_datetime.strftime('%H:%M %Z')}**", inline=True)
+            embed.add_field(name="🔁 Frequency", value=f"**{frequency.capitalize()}**", inline=True)
             embed.set_footer(text="I'll notify you when it's time! ✨")
 
             await interaction.response.send_message(f"{interaction.user.mention}", embed=embed)
@@ -122,7 +124,9 @@ class Reminder(commands.Cog):
                                         "Please do it now! ✨",
                             color=discord.Color.red()
                         )
-                        embed.set_footer(text=f"📅 {reminder['time'].strftime('%Y-%m-%d %H:%M %Z')}")
+                        embed.add_field(name="📅 Date", value=f"**{reminder['time'].strftime('%Y-%m-%d')}**", inline=True)
+                        embed.add_field(name="⏰ Time", value=f"**{reminder['time'].strftime('%H:%M %Z')}**", inline=True)
+                        embed.set_footer(text="Don't forget your task! ✨")
 
                         await channel.send(embed=embed)
                         log_debug(f"📢 Reminder sent to {user_id}: {reminder}")
