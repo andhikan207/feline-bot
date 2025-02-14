@@ -131,8 +131,8 @@ class Reminder(commands.Cog):
                         color=discord.Color.red()
                     )
                     embed.description = (
-                        f"> Hey {user.mention}, it's time to do **{reminder['task']}**!\n"
-                        f"> Please do it now! ✨"
+                        f"Hey {user.mention}, it's time to do **{reminder['task']}**!\n"
+                        f"Please do it now! ✨"
                     )
                     embed.set_footer(text=f"📅 {reminder['time'].strftime('%Y-%m-%d %H:%M %Z')}")
 
