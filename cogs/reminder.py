@@ -106,48 +106,52 @@ class Reminder(commands.Cog):
     @tasks.loop(seconds=60)
     async def check_reminders(self):
         """Checks reminders every minute and sends notifications if needed."""
-        now_utc = datetime.now(pytz.utc)
-        log_debug(f"🔍 Checking reminders at {now_utc.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        now_utc = datetime.now(pytz.utc)  # Get current time in UTC
+        log_debug(f"🔍 Checking reminders at {now_utc.strftime('%Y-%m-%d %H:%M %Z')}")
 
         users_with_reminders = get_reminders(None)
 
         for user in users_with_reminders:
             user_id = user["_id"]
             reminders = user["reminders"]
-            reminders_due = [r for r in reminders if now_utc >= r["time"]]
 
-            for reminder in reminders_due:
-                channel = self.bot.get_channel(REMINDER_CHANNEL_ID)
+            for reminder in reminders:
+                # Convert stored UTC time to user's local timezone
+                reminder_time_utc = reminder["time"]
+                reminder_time_utc = datetime.strptime(reminder_time_utc, "%Y-%m-%dT%H:%M:%S.%f%z")  # Parse stored time
+                user_tz = pytz.timezone(reminder["timezone"])
+                reminder_local_time = reminder_time_utc.astimezone(user_tz)  # Convert to user timezone
 
-                if channel:
-                    try:
-                        user_obj = await self.bot.fetch_user(user_id)
-                        await channel.send(f"{user_obj.mention}")
+                log_debug(f"🕒 Reminder check: User {user_id} -> Task: {reminder['task']} | Reminder Time: {reminder_local_time.strftime('%Y-%m-%d %H:%M %Z')}")
 
-                        # Convert stored UTC time back to user's timezone
-                        user_tz = pytz.timezone(reminder["timezone"])
-                        reminder_time_local = reminder["time"].astimezone(user_tz)
+                # Compare with current UTC time
+                if now_utc >= reminder_time_utc:
+                    channel = self.bot.get_channel(REMINDER_CHANNEL_ID)
 
-                        embed = discord.Embed(
-                            title="🐱⏰ Reminder Time!",
-                            description=f"Hey {user_obj.mention}, it's time to do **{reminder['task']}**!\n"
-                                        "Please do it now! ✨",
-                            color=discord.Color.red()
-                        )
-                        embed.add_field(name="📅 Date", value=f"**{reminder_time_local.strftime('%Y-%m-%d')}**", inline=True)
-                        embed.add_field(name="⏰ Time", value=f"**{reminder_time_local.strftime('%H:%M %Z')}**", inline=True)
-                        embed.add_field(name="🔁 Frequency", value=f"`{reminder['frequency']}`", inline=True)
-                        embed.set_footer(text="Time to act! 🔔")
+                    if channel:
+                        try:
+                            user_obj = await self.bot.fetch_user(user_id)
+                            await channel.send(f"{user_obj.mention}")
 
-                        await channel.send(embed=embed)
-                        log_debug(f"📢 Reminder sent to {user_id}: {reminder}")
+                            embed = discord.Embed(
+                                title="🐱⏰ Reminder Time!",
+                                description=f"Hey {user_obj.mention}, it's time to do **{reminder['task']}**!\n"
+                                            "Please do it now! ✨",
+                                color=discord.Color.red()
+                            )
+                            embed.set_footer(text=f"📅 {reminder_local_time.strftime('%Y-%m-%d %H:%M %Z')}")
 
-                    except Exception as e:
-                        log_error(f"⚠️ Could not fetch user {user_id}: {e}")
+                            await channel.send(embed=embed)
+                            log_debug(f"📢 Reminder sent to {user_id}: {reminder}")
 
-                if reminder["frequency"] == "once":
-                    remove_reminder(user_id, reminder["task"])
-                    log_debug(f"🗑️ Removed completed one-time reminder for {user_id}: {reminder['task']}")
+                        except Exception as e:
+                            log_error(f"⚠️ Could not fetch user {user_id}: {e}")
+
+                    # Remove one-time reminders after they are triggered
+                    if reminder["frequency"] == "once":
+                        remove_reminder(user_id, reminder["task"])
+                        log_debug(f"🗑️ Removed completed one-time reminder for {user_id}: {reminder['task']}")
+
 
     @check_reminders.before_loop
     async def before_check_reminders(self):
