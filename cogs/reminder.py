@@ -128,13 +128,13 @@ class Reminder(commands.Cog):
                     # 🌟 Then, send an embed with the structured reminder details
                     embed = discord.Embed(
                         title="🐱⏰ Reminder Time!",
-                        description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**!",
                         color=discord.Color.red()
                     )
-                    embed.add_field(name="📅 Date", value=f"**{reminder['time'].strftime('%Y-%m-%d')}**", inline=True)
-                    embed.add_field(name="⏰ Time", value=f"**{reminder['time'].strftime('%H:%M %Z')}**", inline=True)
-                    embed.add_field(name="🔁 Frequency", value=f"`{reminder['frequency']}`", inline=True)
-                    embed.set_footer(text="Please do it now! ✨")
+                    embed.description = (
+                        f"> Hey {user.mention}, it's time to do **{reminder['task']}**!\n"
+                        f"> Please do it now! ✨"
+                    )
+                    embed.set_footer(text=f"📅 {reminder['time'].strftime('%Y-%m-%d %H:%M %Z')}")
 
                     await channel.send(embed=embed)
                     print(f"📢 [DEBUG] Reminder sent to {channel.name}")
