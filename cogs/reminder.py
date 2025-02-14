@@ -51,7 +51,7 @@ class Reminder(commands.Cog):
         """Manually sets a user's timezone."""
         if timezone not in pytz.all_timezones:
             await interaction.response.send_message(
-                "🙀 That timezone doesn't seem right! Try something like `Asia/Jakarta` or `America/New_York`! 🌏\n"
+                "That timezone doesn't seem right! 🙀 Try something like `Asia/Jakarta` or `America/New_York`!\n"
                 "🔗 [Click here for a timezone list!](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)",
                 ephemeral=True
             )
@@ -59,23 +59,19 @@ class Reminder(commands.Cog):
 
         user_timezones[interaction.user.id] = timezone
         await interaction.response.send_message(
-            f"😸 Your timezone is now set to `{timezone}`! I'll remind you in your local time! ⏰"
+            f"⏰ Your timezone is now set to `{timezone}`! I'll remind you in your local time!"
         )
 
-    @app_commands.command(name="remind", description="Set a super cute reminder! ✨")
-    async def remind(self, interaction: discord.Interaction, task: str, frequency: str, time: str):
-        """Creates a reminder with an automatically detected timezone."""
+    @app_commands.command(name="remind", description="Set a reminder for a specific date and time!")
+    async def remind(self, interaction: discord.Interaction, task: str, frequency: str, date_time: str):
+        """Creates a reminder with an automatically detected timezone. Now supports full date format (YYYY-MM-DD HH:MM)."""
         try:
             user_tz_name = user_timezones.get(interaction.user.id, get_user_timezone())
             user_tz = pytz.timezone(user_tz_name)
 
-            reminder_time = datetime.strptime(time, "%H:%M").time()
-            reminder_datetime = datetime.now(user_tz).replace(
-                hour=reminder_time.hour, 
-                minute=reminder_time.minute, 
-                second=0, 
-                microsecond=0
-            )
+            # Convert input date and time to a full datetime object
+            reminder_datetime = datetime.strptime(date_time, "%Y-%m-%d %H:%M")
+            reminder_datetime = user_tz.localize(reminder_datetime)
 
             if frequency.lower() not in ["once", "daily"]:
                 await interaction.response.send_message("❌ Use `once` or `daily` for the reminder frequency!", ephemeral=True)
@@ -95,30 +91,29 @@ class Reminder(commands.Cog):
             # 🌟 Combine Mention and Embed into One Message
             embed = discord.Embed(
                 title="🐱 Reminder Set!",
-                description=f"I'll remind you about **{task}** at **{reminder_datetime.strftime('%H:%M %Z')}**!",
+                description=f"I'll remind you about **{task}** on **{reminder_datetime.strftime('%Y-%m-%d %H:%M %Z')}**!",
                 color=discord.Color.orange()
             )
-            embed.add_field(name="⏰ Time", value=f"**{reminder_datetime.strftime('%H:%M %Z')}**", inline=True)
+            embed.add_field(name="⏰ Date & Time", value=f"**{reminder_datetime.strftime('%Y-%m-%d %H:%M %Z')}**", inline=False)
             embed.add_field(name="🔁 Frequency", value=f"**{frequency.capitalize()}**", inline=True)
-            embed.add_field(name="🌍 Timezone", value=f"```{user_tz_name}```", inline=False)
             embed.set_footer(text="I'll notify you when it's time! ✨")
 
             # 🌟 Send as a SINGLE message to avoid "double chatting"
             await interaction.response.send_message(f"{interaction.user.mention}", embed=embed)
 
         except ValueError:
-            await interaction.response.send_message("❌ That time format is incorrect. Use `HH:MM` (24-hour format)!", ephemeral=True)
-            log_error(f"Invalid time format entered: {time}")
+            await interaction.response.send_message("❌ That date format is incorrect. Use `YYYY-MM-DD HH:MM`!", ephemeral=True)
+            log_error(f"Invalid date format entered: {date_time}")
 
     @tasks.loop(seconds=60)
     async def check_reminders(self):
+        """Checks reminders and sends notifications when the time matches."""
         now_utc = datetime.now(pytz.utc)
-        print(f"🔍 [DEBUG] Checking reminders at {now_utc.strftime('%H:%M %Z')}")
 
-        for reminder in self.reminders:
+        for reminder in self.reminders[:]:  # Iterate over a copy to allow safe removal
             reminder_time_utc = reminder["time"].astimezone(pytz.utc)
 
-            if now_utc.hour == reminder_time_utc.hour and now_utc.minute == reminder_time_utc.minute:
+            if now_utc >= reminder_time_utc:
                 channel = self.bot.get_channel(REMINDER_CHANNEL_ID)
 
                 if channel:
@@ -126,20 +121,20 @@ class Reminder(commands.Cog):
                         user = await self.bot.fetch_user(reminder["user_id"])
 
                         # 🌟 First, send a mention so Discord will actually notify the user
-                        mention_msg = await channel.send(f"{user.mention}")
+                        await channel.send(f"{user.mention}")
 
                         # 🌟 Then, send an embed with the structured reminder details
                         embed = discord.Embed(
-                            title="🐱 Reminder Time!",
-                            description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**! ⏰",
+                            title="🐱⏰ Reminder Time!",
+                            description=f"Hey, {user.mention}! It's time to do **{reminder['task']}**!",
                             color=discord.Color.red()
                         )
-                        embed.add_field(name="⏰ Time", value=f"**{reminder['time'].strftime('%H:%M %Z')}**", inline=True)
+                        embed.add_field(name="⏰ Date & Time", value=f"**{reminder['time'].strftime('%Y-%m-%d %H:%M %Z')}**", inline=False)
                         embed.add_field(name="🔁 Frequency", value=f"`{reminder['frequency']}`", inline=True)
                         embed.set_footer(text="Please do it now! ✨")
 
                         await channel.send(embed=embed)
-                        print(f"📢 [DEBUG] Reminder sent to {channel.name}")
+                        print(f"📢 [DEBUG] Reminder sent for {reminder['task']} to {channel.name}")
 
                     except Exception as e:
                         log_error(f"Could not fetch user: {e}")
@@ -150,6 +145,7 @@ class Reminder(commands.Cog):
 
     @check_reminders.before_loop
     async def before_check_reminders(self):
+        """Ensures the bot is ready before checking reminders."""
         await self.bot.wait_until_ready()
 
 async def setup(bot):
