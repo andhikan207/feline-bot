@@ -23,10 +23,13 @@ async def get_secret(secret_id, retries=3, delay=5):
             if attempt < retries - 1:
                 await asyncio.sleep(delay)  # Proper async delay
             else:
-                raise RuntimeError("🚨 Failed to retrieve secret after multiple attempts.")
+                print("🚨 Failed to retrieve secret after multiple attempts. Exiting.")
+                return None
 
 # Retrieve bot token securely
 TOKEN = asyncio.run(get_secret("bot-token"))
+if not TOKEN:
+    raise RuntimeError("❌ Bot token could not be retrieved! Check Google Secret Manager.")
 
 # Enable intents
 intents = discord.Intents.default()
@@ -48,9 +51,6 @@ async def on_ready():
 
 # Get absolute path to cogs directory
 COGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cogs")
-
-# Debugging print statements
-print(f"🔍 Checking if cogs folder exists at: {COGS_DIR}")
 
 async def load_cogs():
     """Dynamically loads all cogs from the 'cogs' folder."""

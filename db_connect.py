@@ -2,18 +2,25 @@ import os
 import pymongo
 from dotenv import load_dotenv
 
-# Load environment variables (for security)
+# Load environment variables from .env
 load_dotenv()
 
-# MongoDB Connection String (Get from MongoDB Atlas)
-MONGO_URI = os.getenv("MONGO_URI")  # Store in .env file
-DB_NAME = "feline-bot"  # Database name
-COLLECTION_NAME = "users"  # Collection name
+# MongoDB Connection String
+MONGO_URI = os.getenv("MONGO_URI")
+DB_NAME = "feline-bot"
+COLLECTION_NAME = "users"
 
-# Connect to MongoDB
-client = pymongo.MongoClient(MONGO_URI)
-db = client[DB_NAME]
-collection = db[COLLECTION_NAME]
+if not MONGO_URI:
+    raise RuntimeError("❌ MONGO_URI is not set. Check your .env file!")
+
+try:
+    # Connect to MongoDB
+    client = pymongo.MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+    collection = db[COLLECTION_NAME]
+    print("✅ Connected to MongoDB successfully!")
+except Exception as e:
+    raise RuntimeError(f"❌ MongoDB Connection Error: {e}")
 
 def get_user_data(user_id):
     """Fetch user data from MongoDB. Create one if not exists."""
