@@ -1,4 +1,5 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -13,7 +14,14 @@ AUTHTKN = os.getenv("AUTH_TKN")
 intents = discord.Intents.default()
 bot = commands.Bot(command_prefix = "/", intents = intents)
 
-# When online....
+# Load all modules.
+async def load_modules():
+    for filename in os.listdir("./module"):
+        if filename.endswith(".py"):
+            bot.load_extension(f"module.{filename[:-3]}")
+
+# -[RUN]-
+# # When online....
 @bot.event
 async def on_ready():
     print(f"🚀 Logged in as {bot.user}")
@@ -23,9 +31,8 @@ async def on_ready():
     except Exception as e:
         print(f"❌ Error syncing commands: {e}")
 
-# Load all modules.
-for filename in os.listdir("./module"):
-    if filename.endswith(".py"):
-        bot.load_extension(f"module.{filename[:-3]}")
+async def main():
+    await load_modules()
+    await bot.start(AUTHTKN)
 
-bot.run(AUTHTKN)
+asyncio.run(main())
