@@ -8,7 +8,7 @@ load_dotenv()
 
 AUTHTKN = os.getenv("AUTH_TKN")
 
-intents = discord.Intents.defaulk()
+intents = discord.Intents.default()
 bot = commands.Bot(command_prefix = "!", intents = intents)
 
 @bot.event
