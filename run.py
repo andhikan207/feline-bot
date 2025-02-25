@@ -11,7 +11,7 @@ AUTHTKN = os.getenv("AUTH_TKN")
 
 # Intents & load slash command feature...
 intents = discord.Intents.default()
-bot = discord.Client(intents = intents)
+bot = commands.Bot(command_prefix = "/", intents = intents)
 tree = app_commands.CommandTree(bot)
 
 # When online....
