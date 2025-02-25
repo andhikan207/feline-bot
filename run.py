@@ -18,10 +18,10 @@ bot = commands.Bot(command_prefix = "/", intents = intents)
 async def on_ready():
     print(f"🚀 Logged in as {bot.user}")
     try:
-        synced = await tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        synced = await bot.tree.sync()
+        print(f"✅ Synced {len(synced)} command(s)")
     except Exception as e:
-        print(f"Error syncing commands: {e}")
+        print(f"❌ Error syncing commands: {e}")
 
 # Load all modules.
 for filename in os.listdir("./module"):
