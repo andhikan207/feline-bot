@@ -18,7 +18,7 @@ bot = commands.Bot(command_prefix = "/", intents = intents)
 async def load_modules():
     for filename in os.listdir("./module"):
         if filename.endswith(".py"):
-            bot.load_extension(f"module.{filename[:-3]}")
+            await bot.load_extension(f"module.{filename[:-3]}")
 
 # -[RUN]-
 # # When online....
