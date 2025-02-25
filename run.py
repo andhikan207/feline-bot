@@ -25,15 +25,15 @@ async def load_modules():
 @bot.event
 async def on_ready():
     print(f"🚀 Logged in as {bot.user}")
-    
+    try:
+        synced = await bot.tree.sync()
+        print(f"✅ Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(f"❌ Error syncing commands: {e}")
+
+# Function to start bot
 async def main():
     await load_modules()
-    async with bot:
-        await bot.start(AUTHTKN)
-        try:
-            synced = await bot.tree.sync()
-            print(f"✅ Synced {len(synced)} command(s)")
-        except Exception as e:
-            print(f"❌ Error syncing commands: {e}")
+    await bot.start(AUTHTKN)
 
 asyncio.run(main())
